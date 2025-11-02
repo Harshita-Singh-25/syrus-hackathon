@@ -1,0 +1,126 @@
+1. Authentication Explanation (JWT)
+What to Explain:
+•	JWT (JSON Web Token): A compact, URL-safe token that contains user information
+•	Flow:
+1.	User logs in → Server validates credentials → Returns JWT
+2.	Client stores JWT (localStorage) → Sends with every request
+3.	Server verifies JWT → Grants access to protected routes
+Key Points:
+•	Stateless: Server doesn't store session data
+•	Secure: Signed with secret key, tamper-proof
+•	Contains Payload: User ID, role, expiration time
+2. Context API (State Management)
+What to Explain:
+•	Purpose: Global state management without prop drilling
+•	AuthContext: Manages authentication state across components
+•	ThemeContext: Manages dark/light mode preference
+Key Hooks Used:
+•	useState: Local component state
+•	useEffect: Side effects (API calls, localStorage)
+•	useContext: Access global state
+•	Custom Hooks: useAuth(), useTheme()
+3. Postman Testing Guide
+A. Authentication Endpoints:
+1. Register User
+text
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com",
+  "password": "password123",
+  "role": "user"
+}
+Expected Response:
+json
+{
+  "message": "User registered successfully",
+  "user": {
+    "id": 1,
+    "name": "Test User",
+    "email": "test@example.com",
+    "role": "user"
+  }
+}
+2. Login User
+text
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+Expected Response:
+json
+{
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "name": "Test User",
+    "email": "test@example.com",
+    "role": "user"
+  }
+}
+B. Recipe CRUD Endpoints:
+1. Get All Recipes (Public)
+text
+GET http://localhost:5000/api/recipes
+2. Create Recipe (Protected)
+text
+POST http://localhost:5000/api/recipes
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+  "title": "Test Recipe",
+  "description": "A test recipe description",
+  "ingredients": ["Ingredient 1", "Ingredient 2"],
+  "instructions": "Step by step instructions...",
+  "cookingTime": 30,
+  "difficulty": "Easy",
+  "category": "Dinner"
+}
+3. Update Recipe (Protected)
+text
+PUT http://localhost:5000/api/recipes/1
+Content-Type: application/json
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+{
+  "title": "Updated Recipe Title"
+}
+4. Delete Recipe (Protected)
+text
+DELETE http://localhost:5000/api/recipes/1
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+4. Error Handling Tests
+Test Invalid Login:
+json
+{
+  "email": "wrong@email.com",
+  "password": "wrongpassword"
+}
+Expected: 400 Bad Request with error message
+Test Without Token:
+text
+GET http://localhost:5000/api/recipes
+// No Authorization header
+Expected: 401 Unauthorized
+Test Expired Token:
+•	Use an expired token
+Expected: 403 Forbidden
+5. Role-Based Access Test
+Create Admin User:
+json
+{
+  "name": "Admin User",
+  "email": "admin@example.com",
+  "password": "admin123",
+  "role": "admin"
+}
+Test Admin Privileges:
+•	Admin should be able to edit/delete any recipe
+•	Regular users can only edit/delete their own recipes
