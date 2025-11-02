@@ -1,13 +1,6 @@
-import express from "express";
-import jwt from "jsonwebtoken";
-
-const router = express.Router();
-
 // In-memory database
 let recipes = [];
 let recipeIdCounter = 1;
-
-console.log('Recipe routes loaded.');
 
 // Sample data
 const sampleRecipe = {
@@ -19,42 +12,22 @@ const sampleRecipe = {
   cookingTime: 20,
   difficulty: "Easy",
   category: "Breakfast",
-  createdBy: "system", // 'system' or a specific user ID
+  createdBy: "system",
   createdAt: new Date().toISOString()
 };
 recipes.push(sampleRecipe);
 console.log('Sample recipe added: Classic Pancakes');
 
-// Authentication middleware
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    console.log("AUTH FAILED: No token provided.");
-    return res.status(401).json({ message: "Access token required" });
-  }
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      console.log("AUTH FAILED: Invalid token.");
-      return res.status(403).json({ message: "Invalid or expired token" });
-    }
-    req.user = user;
-    // Optional: Log success, but can be noisy.
-    // console.log(`AUTH SUCCESS: User ${user.name}`);
-    next();
-  });
-};
-
-// Get all recipes
-router.get("/", (req, res) => {
+// @desc    Get all recipes
+// @route   GET /api/recipes
+export const getAllRecipes = (req, res) => {
   console.log(`\nGET /api/recipes - Returning ${recipes.length} recipes.`);
   res.status(200).json(recipes);
-});
+};
 
-// Get single recipe
-router.get("/:id", (req, res) => {
+// @desc    Get single recipe by ID
+// @route   GET /api/recipes/:id
+export const getRecipeById = (req, res) => {
   console.log(`\nGET /api/recipes/${req.params.id}`);
   
   const recipe = recipes.find(r => r.id === parseInt(req.params.id));
@@ -65,12 +38,12 @@ router.get("/:id", (req, res) => {
   
   console.log(`Found recipe: ${recipe.title}`);
   res.status(200).json(recipe);
-});
+};
 
-// Create recipe
-router.post("/", authenticateToken, (req, res) => {
+// @desc    Create a new recipe
+// @route   POST /api/recipes
+export const createRecipe = (req, res) => {
   console.log(`\nPOST /api/recipes - Create request by ${req.user.name}`);
-
   const { title, description, ingredients, instructions, cookingTime, difficulty, category } = req.body;
 
   if (!title || !description || !ingredients || !instructions) {
@@ -87,18 +60,18 @@ router.post("/", authenticateToken, (req, res) => {
     cookingTime: cookingTime || 30,
     difficulty: difficulty || "Medium",
     category: category || "Main Course",
-    createdBy: req.user.id, // Link to the user who created it
+    createdBy: req.user.id,
     createdAt: new Date().toISOString()
   };
 
   recipes.push(newRecipe);
-  
   console.log(`Recipe created: ${newRecipe.title} (ID: ${newRecipe.id}) by ${req.user.name}`);
   res.status(201).json(newRecipe);
-});
+};
 
-// Update recipe
-router.put("/:id", authenticateToken, (req, res) => {
+// @desc    Update a recipe
+// @route   PUT /api/recipes/:id
+export const updateRecipe = (req, res) => {
   const recipeId = parseInt(req.params.id);
   console.log(`\nPUT /api/recipes/${recipeId} - Update request by ${req.user.name}`);
   
@@ -106,34 +79,31 @@ router.put("/:id", authenticateToken, (req, res) => {
   
   if (recipeIndex === -1) {
     console.log(`Update failed: Recipe not found (ID: ${recipeId})`);
-    return res.status(404).json({ message: "Recipe not found" });
+    return res.status(4404).json({ message: "Recipe not found" });
   }
 
   const recipe = recipes[recipeIndex];
   
-  // Users can only edit their own recipes unless they're admin
   if (recipe.createdBy !== req.user.id && req.user.role !== "admin") {
-    console.log(`Update failed: User ${req.user.name} not authorized to edit recipe ${recipe.id}`);
+    console.log(`Update failed: User ${req.user.name} not authorized`);
     return res.status(403).json({ message: "You can only edit your own recipes" });
   }
 
   const updatedRecipe = {
     ...recipe,
     ...req.body,
-    id: recipe.id, // Ensure ID remains unchanged
-    createdBy: recipe.createdBy, // Ensure original creator remains
-    createdAt: recipe.createdAt, // Ensure original creation date remains
+    id: recipe.id,
     updatedAt: new Date().toISOString()
   };
 
   recipes[recipeIndex] = updatedRecipe;
-  
   console.log(`Recipe updated: ${updatedRecipe.title} (ID: ${updatedRecipe.id})`);
   res.status(200).json(updatedRecipe);
-});
+};
 
-// Delete recipe
-router.delete("/:id", authenticateToken, (req, res) => {
+// @desc    Delete a recipe
+// @route   DELETE /api/recipes/:id
+export const deleteRecipe = (req, res) => {
   const recipeId = parseInt(req.params.id);
   console.log(`\nDELETE /api/recipes/${recipeId} - Delete request by ${req.user.name}`);
   
@@ -146,16 +116,12 @@ router.delete("/:id", authenticateToken, (req, res) => {
 
   const recipe = recipes[recipeIndex];
   
-  // Users can only delete their own recipes unless they're admin
   if (recipe.createdBy !== req.user.id && req.user.role !== "admin") {
-    console.log(`Delete failed: User ${req.user.name} not authorized to delete recipe ${recipe.id}`);
+    console.log(`Delete failed: User ${req.user.name} not authorized`);
     return res.status(403).json({ message: "You can only delete your own recipes" });
   }
 
   recipes.splice(recipeIndex, 1);
-  
   console.log(`Recipe deleted: ${recipe.title} (ID: ${recipe.id})`);
   res.status(200).json({ message: "Recipe deleted successfully" });
-});
-
-export default router;
+};

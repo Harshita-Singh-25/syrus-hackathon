@@ -3,8 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 
 // Import route files
-import authRoutes from "./routes/auth.js";
-import recipeRoutes from "./routes/recipes.js";
+import authRoutes from "./routes/authRoutes.js";
+import recipeRoutes from "./routes/recipeRoutes.js";
 
 dotenv.config();
 
